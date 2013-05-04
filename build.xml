@@ -1,0 +1,48 @@
+<project name="Java mixin (Java 5+)" default="all">
+  <target name="all" depends="jar"/>
+
+  <target name="withAgent" description="run with logging added by java agent">
+    <java fork="yes" classpath="dist/javamixin.jar" classname="javamixin.Modifier">
+      <jvmarg value="-processor javaagent:dist/loggeragent.jar"/>
+    </java>
+  </target>
+
+  <target name="compile" description="compile mixin">
+    <delete dir="bin" />
+    <mkdir dir="bin" />
+    <javac source="1.5" srcdir="src/main" destdir="bin" debug="false" 
+           optimize="true" verbose="false" classpath="lib/javassist.jar;lib/annovention.jar">
+    </javac>
+  </target>
+
+  <target name="jar" depends="compile" description="create mixin jar">
+    <jar basedir="bin" destfile="dist/javamixin.jar" manifest="Manifest.mf"/>
+  	<delete dir="bin/javamixin" />
+  </target>
+	
+
+  <target name="instrument" description="processes annotations">
+  	<java fork="yes" classname="javamixin.processors.EventBasedAnnotationsProcessor">
+	  	<classpath>
+		   <pathelement path="bin"/>
+	  	   <pathelement location="dist/javamixin.jar"/>
+	  	   <pathelement location="lib/javassist.jar"/>
+  		   <pathelement location="lib/annovention.jar"/>
+	  	</classpath>
+  		<arg line="bin"/>
+  	</java>
+  </target>
+	
+  <target name="test" depends="jar" description="runs instrumented class">
+    <javac source="1.5" srcdir="src/test" destdir="bin" debug="false" 
+              optimize="true" verbose="false" classpath="bin;dist/javamixin.jar;lib/javassist.jar">
+    </javac>
+    <antcall target="instrument" />  	
+  	<java classname="test.Client">
+	  	<classpath>
+		   <pathelement path="bin"/>
+	  	   <pathelement location="dist/javamixin.jar"/>
+	  	</classpath>
+  	</java>
+  </target>
+</project>
